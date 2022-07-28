@@ -1,0 +1,48 @@
+#!/bin/bash
+# Artem Koval
+# Lab2 - Search and Report
+# CS 3030 - Scripting Languages
+
+# Making a temporary directory
+mkdir /tmp/$USER
+
+# Checking if user gave a parameter
+if [ $# -ne 1 ]; then
+	echo "Usage: srpt FOLDER" 
+	exit 1
+fi
+
+# Big find!
+find $1 \( -type f -fprintf /tmp/$USER/numberOfFiles "\n" \) , \( -type d -fprintf /tmp/$USER/numberOfDir "\n" \) , \( -type l -fprintf /tmp/$USER/numberoflinks "\n" \) , \( -type f -fprintf /tmp/$USER/sizeofallfiles "%s\n" \) , \( -type f \( -name '*.jpg' -o -name '*.bmp' -o -name '*.gif' \) -fprintf /tmp/$USER/numberofgraphicsfiles "\n" \) , \( -type f -mtime +365 -fprintf /tmp/$USER/numberofoldfiles "\n" \) , \( -type f -executable -fprintf /tmp/$USER/numberofexecutablefiles "\n" \) , \( -size +500k -fprintf /tmp/$USER/numberoflargefiles "\n" \) , \( -name "*.o" -fprintf /tmp/$USER/numberoftempfiles "\n" \)
+
+# Setting up the variables
+fileCnt=$(wc -l /tmp/$USER/numberOfFiles | cut -d' ' -f 1)
+dirCnt=$(wc -l /tmp/$USER/numberOfDir | cut -d' ' -f 1)
+linkCnt=$(wc -l /tmp/$USER/numberoflinks | cut -d' ' -f 1)
+graphicCnt=$(wc -l /tmp/$USER/numberofgraphicsfiles | cut -d' ' -f 1)
+totalSize=$(awk '{tot=tot+$1} END {print tot}' /tmp/$USER/sizeofallfiles)
+oldCnt=$(wc -l /tmp/$USER/numberofoldfiles | cut -d' ' -f 1)
+execCnt=$(wc -l /tmp/$USER/numberofexecutablefiles | cut -d' ' -f 1)
+largeFilesCnt=$(wc -l /tmp/$USER/numberoflargefiles | cut -d' ' -f 1)
+tempFilesCnt=$(wc -l /tmp/$USER/numberoftempfiles | cut -d' ' -f 1)
+
+#removing 1 from the number of directories to not include partent directory
+(( dirCnt-- ))
+
+#Displaying everything we found
+printf "SearchReport %s $1 %s\n" $HOSTNAME "$(date)"
+printf "Execution time %'d\n" $SECONDS
+printf "Directories %s\n" $dirCnt
+printf "Files %'d\n" $fileCnt 
+printf "Sym links %'d\n" $linkCnt
+printf "Old files %'d\n" $oldCnt
+printf "Large files %'d\n" $largeFilesCnt
+printf "Graphics files %'d\n" $graphicCnt
+printf "Temporary files %'d\n" $tempFilesCnt
+printf "Executable files %'d\n" $execCnt
+printf "TotalFileSize %'d\n" $totalSize
+
+#Removing a temporary directory
+rm -rf /tmp/$USER
+
+exit 0

@@ -1,0 +1,85 @@
+#!/usr/bin/python3
+# Artem Koval
+# Lab 6 - Filemaker
+
+import sys
+import shlex
+import random
+           
+# Handling input
+if len(sys.argv) != 4:
+    print("Usage: ./filemaker INPUTCOMMANDFILE OUTPUTFILE RECORDCOUNT")
+    exit(1)
+
+try:
+    recCount = int(sys.argv[3])
+except:
+    print("Error")
+    exit(1)
+
+try:
+    inputFile = open(sys.argv[1], "r")
+except:
+    print("Error")
+    exit(1)
+
+try:
+    outputFile = open(sys.argv[2], "w")
+except:
+    print("Error")
+    exit(1)
+
+commands = []
+
+files = {}
+
+# Reads the info into a big array of commands
+inputLines = inputFile.readlines()
+for line in inputLines:
+    line = shlex.split(line, True)
+    if line:
+        if line[0] == "HEADER":
+            fixed = line[1].encode("utf-8").decode("unicode_escape")
+            outputFile.write(fixed)
+            continue
+        elif line[0] == "WORD":
+            try:
+                file = open(line[2], "r")
+            except:
+                print("Error")
+            files[line[1]] = file.readlines()
+            file.close()
+        commands.append(line)
+
+# will do all the logic processing output
+def processOutput():
+    keys = {}
+
+    for command in commands:
+        if command[0] == "STRING":
+            toWrite = command[1].encode("utf-8").decode("unicode_escape")
+            outputFile.write(toWrite)
+        elif command[0] == "WORD":
+            if files[command[1]]:
+                randNum = random.randint(0, len(files[command[1]])-1)
+                randItem = files[command[1]][randNum]
+                randItem = randItem.rstrip()
+                outputFile.write(randItem)
+                keys[command[1]] = randItem
+        elif command[0] == "REFER":
+            toWrite = keys[command[1]].encode("utf-8").decode("unicode_escape")
+            outputFile.write(keys[command[1]])
+        elif command[0] == "INTEGER":
+            randNum = random.randint(int(command[2]), int(command[3])-1)
+            outputFile.write(str(randNum).encode("utf-8").decode("unicode_escape"))
+            keys[command[1]] = str(randNum).encode("utf-8").decode("unicode_escape")
+
+# Loops as many times as specified
+for i in range(recCount):
+    processOutput()
+
+# Let's not forget to close the files
+inputFile.close()
+outputFile.close()
+
+exit(0)

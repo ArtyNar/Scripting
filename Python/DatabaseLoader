@@ -1,0 +1,61 @@
+#!/usr/bin/python3
+# Artem Koval
+# Lab 5 - Database Loader
+# CS 3030 - Scripting Languages
+
+# All the needed imports
+import sys
+import sqlite3
+import csv
+
+# Checking if there is a correct ammount of arguments
+if len(sys.argv) != 3:
+    print("Usage: ./dbload INPUT OUTPUT")
+    exit(1)
+try:
+    conn = sqlite3.connect(sys.argv[2])
+except:
+    print("Error")
+    exit(1)
+
+# Dropping table in case they exist
+curs = conn.cursor()
+curs.execute('''drop table if exists courses''')
+curs.execute('''drop table if exists people''')
+
+# Creating tables
+curs.execute('''create table courses 
+        (id text, subjcode text, coursenumber text, termcode text)''')
+curs.execute('''create table people
+        (id text primary key unique, lastname text, firstname text, email text, major text, city text, state text, zip text)''')
+
+# Trying to open a csv file
+try:
+    reader = csv.reader(open(sys.argv[1], 'r'), delimiter=',', quotechar='"')
+except:
+    print("Error")
+    exit(1)
+
+# Iterating overt the csv rows, fetching the data, inserting it into a database
+counter = 0
+for row in reader:
+    counter += 1
+    
+    # Skipping the first row
+    if counter == 1:
+        continue
+
+    # Getting the info for a person table
+    r = (row[0], row[2], row[1], row[3], row[4], row[7], row[8], row[9])
+    curs.execute("select * from people where id = '{0}'".format(row[0]))
+    if not curs.fetchone():
+        curs.execute('''insert into people (id, lastname, firstname, email, major, city, state, zip) values(?,?,?,?,?,?,?,?)''', r)
+    
+    # Getting the info for a courses table
+    term = row[6]
+    coursedata = row[5].split(" ")
+
+    curs.execute('''insert into courses (id, subjcode, coursenumber, termcode) values(?,?,?,?)''', (row[0], coursedata[0], coursedata[1], term))
+
+conn.commit()
+exit(0)
